@@ -1,0 +1,29 @@
+{
+  "minColumnGap": 1,
+  "maxColumnWidth": 80,
+  "indentSize": 4,
+  "alignAssignments": true,
+  "alignOperators": true,
+  "alignComments": true,
+  "alignMethodChains": true,
+  "alignTernary": true,
+  "alignEnums": true,
+  "alignSwitchCases": true,
+  "alignMapEntries": true,
+  "alignStructFields": true,
+  "alignImports": true,
+  "alignFunctionParams": true,
+  "alignArrayColumns": true,
+  "languages": {
+    "java": {
+      "commentToken": "//",
+      "alignTokens": ["=", ":", "+="],
+      "chainAlignStyle": "indent"
+    },
+    "python": {
+      "commentToken": "#",
+      "alignTokens": ["="],
+      "chainAlignStyle": "indent"
+    }
+  }
+}
