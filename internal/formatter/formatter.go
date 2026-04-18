@@ -78,10 +78,14 @@ func Format(src, language string, cfg *config.Config) (string, error) {
 			out.WriteString("\n")
 			continue
 		}
-		if len(group) > 0 && indent != prevIndent {
-			flushGroup()
-		}
 		cells := Tokenize(rest, langCfg)
+		if len(group) > 0 {
+			if indent != prevIndent {
+				flushGroup()
+			} else if langCfg.GroupBreak != nil && langCfg.GroupBreak(group[len(group)-1].cells, cells) {
+				flushGroup()
+			}
+		}
 		normalizedIndent := normalizeIndent(indent, indentUnit, cfg.IndentSize)
 		group = append(group, row{indent: normalizedIndent, cells: cells})
 		prevIndent = indent

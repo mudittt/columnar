@@ -17,26 +17,31 @@ type LangConfig struct {
 	// than being split on whitespace. Used for config-style files where
 	// `KEY = one two three` has a single logical value.
 	AssignRHSAtomic bool
+	// GroupBreak decides whether to split the alignment group between two
+	// adjacent same-indent lines. Defined per-language in a dedicated
+	// group_<lang>.go file; nil means "never break on content" (only blank
+	// lines and indent changes split groups).
+	GroupBreak GroupBreakFunc
 }
 
 var languages = map[string]LangConfig{
-	"java":        {Name: "java", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}},
-	"javascript":  {Name: "javascript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}},
-	"typescript":  {Name: "typescript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}},
-	"python":      {Name: "python", LineComment: "#", StringQuotes: []rune{'"', '\''}},
-	"rust":        {Name: "rust", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"'}},
-	"go":          {Name: "go", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '`'}},
-	"c":           {Name: "c", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}},
-	"cpp":         {Name: "cpp", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}},
-	"csharp":      {Name: "csharp", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}},
-	"kotlin":      {Name: "kotlin", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}},
-	"swift":       {Name: "swift", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"'}},
-	"ruby":        {Name: "ruby", LineComment: "#", StringQuotes: []rune{'"', '\''}},
-	"php":         {Name: "php", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}},
-	"dart":        {Name: "dart", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}},
-	"lua":         {Name: "lua", LineComment: "--", StringQuotes: []rune{'"', '\''}},
+	"java":        {Name: "java", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"javascript":  {Name: "javascript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}, GroupBreak: CFamilyBreak},
+	"typescript":  {Name: "typescript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}, GroupBreak: CFamilyBreak},
+	"python":      {Name: "python", LineComment: "#", StringQuotes: []rune{'"', '\''}, GroupBreak: PythonBreak},
+	"rust":        {Name: "rust", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"'}, GroupBreak: CFamilyBreak},
+	"go":          {Name: "go", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '`'}, GroupBreak: CFamilyBreak},
+	"c":           {Name: "c", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"cpp":         {Name: "cpp", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"csharp":      {Name: "csharp", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"kotlin":      {Name: "kotlin", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"swift":       {Name: "swift", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"'}, GroupBreak: CFamilyBreak},
+	"ruby":        {Name: "ruby", LineComment: "#", StringQuotes: []rune{'"', '\''}, GroupBreak: RubyBreak},
+	"php":         {Name: "php", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"dart":        {Name: "dart", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"lua":         {Name: "lua", LineComment: "--", StringQuotes: []rune{'"', '\''}, GroupBreak: LuaBreak},
 	"makefile":    {Name: "makefile", LineComment: "#", StringQuotes: []rune{'"', '\''}, AssignRHSAtomic: true},
-	"shellscript": {Name: "shellscript", LineComment: "#", StringQuotes: []rune{'"', '\''}, AssignRHSAtomic: true},
+	"shellscript": {Name: "shellscript", LineComment: "#", StringQuotes: []rune{'"', '\''}, AssignRHSAtomic: true, GroupBreak: ShellBreak},
 	"properties":  {Name: "properties", LineComment: "#", AssignRHSAtomic: true},
 	"ini":         {Name: "ini", LineComment: ";", AssignRHSAtomic: true},
 	"toml":        {Name: "toml", LineComment: "#", StringQuotes: []rune{'"', '\''}, AssignRHSAtomic: true},
