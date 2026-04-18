@@ -111,29 +111,26 @@ func Format(src, language string, cfg *config.Config) (string, error) {
 	for _, line := range lines {
 		indent, rest := SplitIndent(line)
 
-		// Lines inside an unclosed multiline string must be emitted verbatim.
-		if mlStringDelim != "" {
-			flushGroup()
-			mlStringDelim = updateMLState(rest, mlStringDelim, langCfg.MultilineStringDelims)
-			out.WriteString(line + "\n")
-			prevIndent = indent
-			continue
-		}
+		if !cfg.FormatMultilineStrings {
+			// Lines inside an unclosed multiline string must be emitted verbatim.
+			if mlStringDelim != "" {
+				flushGroup()
+				mlStringDelim = updateMLState(rest, mlStringDelim, langCfg.MultilineStringDelims)
+				out.WriteString(line + "\n")
+				prevIndent = indent
+				continue
+			}
 
-		if strings.TrimSpace(rest) == "" {
-			flushGroup()
-			out.WriteString("\n")
-			continue
-		}
-
-		// Check if this line opens a multiline string that doesn't close here.
-		newDelim := updateMLState(rest, "", langCfg.MultilineStringDelims)
-		if newDelim != "" {
-			flushGroup()
-			mlStringDelim = newDelim
-			out.WriteString(line + "\n")
-			prevIndent = indent
-			continue
+			if strings.TrimSpace(rest) != "" {
+				// Check if this line opens a multiline string that doesn't close here.
+				if newDelim := updateMLState(rest, "", langCfg.MultilineStringDelims); newDelim != "" {
+					flushGroup()
+					mlStringDelim = newDelim
+					out.WriteString(line + "\n")
+					prevIndent = indent
+					continue
+				}
+			}
 		}
 
 		cells := Tokenize(rest, langCfg)

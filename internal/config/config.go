@@ -16,22 +16,23 @@ type LanguageOverride struct {
 }
 
 type Config struct {
-	MinColumnGap        int                         `json:"minColumnGap"`
-	MaxColumnWidth      int                         `json:"maxColumnWidth"`
-	IndentSize          int                         `json:"indentSize"`
-	AlignAssignments    bool                        `json:"alignAssignments"`
-	AlignOperators      bool                        `json:"alignOperators"`
-	AlignComments       bool                        `json:"alignComments"`
-	AlignMethodChains   bool                        `json:"alignMethodChains"`
-	AlignTernary        bool                        `json:"alignTernary"`
-	AlignEnums          bool                        `json:"alignEnums"`
-	AlignSwitchCases    bool                        `json:"alignSwitchCases"`
-	AlignMapEntries     bool                        `json:"alignMapEntries"`
-	AlignStructFields   bool                        `json:"alignStructFields"`
-	AlignImports        bool                        `json:"alignImports"`
-	AlignFunctionParams bool                        `json:"alignFunctionParams"`
-	AlignArrayColumns   bool                        `json:"alignArrayColumns"`
-	Languages           map[string]LanguageOverride `json:"languages"`
+	MinColumnGap           int                         `json:"minColumnGap"`
+	MaxColumnWidth         int                         `json:"maxColumnWidth"`
+	IndentSize             int                         `json:"indentSize"`
+	AlignAssignments       bool                        `json:"alignAssignments"`
+	AlignOperators         bool                        `json:"alignOperators"`
+	AlignComments          bool                        `json:"alignComments"`
+	AlignMethodChains      bool                        `json:"alignMethodChains"`
+	AlignTernary           bool                        `json:"alignTernary"`
+	AlignEnums             bool                        `json:"alignEnums"`
+	AlignSwitchCases       bool                        `json:"alignSwitchCases"`
+	AlignMapEntries        bool                        `json:"alignMapEntries"`
+	AlignStructFields      bool                        `json:"alignStructFields"`
+	AlignImports           bool                        `json:"alignImports"`
+	AlignFunctionParams    bool                        `json:"alignFunctionParams"`
+	AlignArrayColumns      bool                        `json:"alignArrayColumns"`
+	FormatMultilineStrings bool                        `json:"formatMultilineStrings"`
+	Languages              map[string]LanguageOverride `json:"languages"`
 }
 
 // Default returns a config with every alignment feature enabled and sane
