@@ -108,8 +108,32 @@ func Format(src, language string, cfg *config.Config) (string, error) {
 
 	prevIndent := ""
 	mlStringDelim := ""
+	inBlockComment := false
 	for _, line := range lines {
 		indent, rest := SplitIndent(line)
+
+		// When AlignComments is disabled, emit block comment bodies verbatim.
+		if !cfg.AlignComments && langCfg.BlockCommentOpen != "" {
+			if inBlockComment {
+				flushGroup()
+				out.WriteString(line + "\n")
+				prevIndent = indent
+				if strings.Contains(rest, langCfg.BlockCommentClose) {
+					inBlockComment = false
+				}
+				continue
+			}
+			if idx := strings.Index(rest, langCfg.BlockCommentOpen); idx >= 0 {
+				after := rest[idx+len(langCfg.BlockCommentOpen):]
+				if !strings.Contains(after, langCfg.BlockCommentClose) {
+					flushGroup()
+					inBlockComment = true
+					out.WriteString(line + "\n")
+					prevIndent = indent
+					continue
+				}
+			}
+		}
 
 		if !cfg.FormatMultilineStrings {
 			// Lines inside an unclosed multiline string must be emitted verbatim.
@@ -171,8 +195,13 @@ func detectIndentUnit(lines []string) int {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		indent, _ := SplitIndent(line)
+		indent, rest := SplitIndent(line)
 		if len(indent) > 0 {
+			// Skip block comment continuation lines (e.g. " * text") — their
+			// single-space indent would corrupt indent-unit detection.
+			if strings.HasPrefix(rest, "*") {
+				continue
+			}
 			if strings.Contains(indent, "\t") {
 				return 1
 			}
@@ -186,9 +215,11 @@ func normalizeIndent(indent string, indentUnit, targetSize int) string {
 	if len(indent) == 0 {
 		return ""
 	}
-	depth := len(indent) / indentUnit
-	if depth == 0 && len(indent) > 0 {
-		depth = 1
+	// Sub-unit indents (e.g. the " *" lines in block comments) are not real
+	// indent levels — preserve them verbatim instead of quantizing them.
+	if len(indent) < indentUnit {
+		return indent
 	}
+	depth := len(indent) / indentUnit
 	return strings.Repeat(" ", depth*targetSize)
 }
