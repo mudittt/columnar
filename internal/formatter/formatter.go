@@ -20,6 +20,42 @@ import (
 	"github.com/mudittt/columnar/internal/config"
 )
 
+// updateMLState scans line given the current multiline-string delimiter and
+// returns the active delimiter after the line ends. Returns "" when no
+// multiline string is open at end of line.
+func updateMLState(line, currentDelim string, delims []string) string {
+	if len(delims) == 0 {
+		return currentDelim
+	}
+	s := line
+	inML := currentDelim
+	for len(s) > 0 {
+		if inML != "" {
+			idx := strings.Index(s, inML)
+			if idx < 0 {
+				return inML // delimiter not closed on this line
+			}
+			s = s[idx+len(inML):]
+			inML = ""
+			continue
+		}
+		earliest := -1
+		var found string
+		for _, d := range delims {
+			if idx := strings.Index(s, d); idx >= 0 && (earliest < 0 || idx < earliest) {
+				earliest = idx
+				found = d
+			}
+		}
+		if earliest < 0 {
+			break
+		}
+		s = s[earliest+len(found):]
+		inML = found
+	}
+	return inML
+}
+
 type row struct {
 	indent string
 	cells  []string
@@ -71,13 +107,35 @@ func Format(src, language string, cfg *config.Config) (string, error) {
 	}
 
 	prevIndent := ""
+	mlStringDelim := ""
 	for _, line := range lines {
 		indent, rest := SplitIndent(line)
+
+		// Lines inside an unclosed multiline string must be emitted verbatim.
+		if mlStringDelim != "" {
+			flushGroup()
+			mlStringDelim = updateMLState(rest, mlStringDelim, langCfg.MultilineStringDelims)
+			out.WriteString(line + "\n")
+			prevIndent = indent
+			continue
+		}
+
 		if strings.TrimSpace(rest) == "" {
 			flushGroup()
 			out.WriteString("\n")
 			continue
 		}
+
+		// Check if this line opens a multiline string that doesn't close here.
+		newDelim := updateMLState(rest, "", langCfg.MultilineStringDelims)
+		if newDelim != "" {
+			flushGroup()
+			mlStringDelim = newDelim
+			out.WriteString(line + "\n")
+			prevIndent = indent
+			continue
+		}
+
 		cells := Tokenize(rest, langCfg)
 		if len(group) > 0 {
 			if indent != prevIndent {

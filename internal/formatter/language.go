@@ -12,6 +12,11 @@ type LangConfig struct {
 	BlockCommentOpen  string
 	BlockCommentClose string
 	StringQuotes      []rune
+	// MultilineStringDelims lists delimiters that open and close multi-line
+	// string literals (e.g. `"""` for Python, "`" for Go/JS). Lines inside
+	// an unclosed multi-line string are emitted verbatim — the formatter must
+	// not touch string content.
+	MultilineStringDelims []string
 	// AssignRHSAtomic: when true, after a standalone `=` the rest of the
 	// line (up to any trailing comment) is kept as a single cell rather
 	// than being split on whitespace. Used for config-style files where
@@ -26,19 +31,19 @@ type LangConfig struct {
 
 var languages = map[string]LangConfig{
 	"java":        {Name: "java", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
-	"javascript":  {Name: "javascript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}, GroupBreak: CFamilyBreak},
-	"typescript":  {Name: "typescript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}, GroupBreak: CFamilyBreak},
-	"python":      {Name: "python", LineComment: "#", StringQuotes: []rune{'"', '\''}, GroupBreak: PythonBreak},
+	"javascript":  {Name: "javascript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}, MultilineStringDelims: []string{"`"}, GroupBreak: CFamilyBreak},
+	"typescript":  {Name: "typescript", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\'', '`'}, MultilineStringDelims: []string{"`"}, GroupBreak: CFamilyBreak},
+	"python":      {Name: "python", LineComment: "#", StringQuotes: []rune{'"', '\''}, MultilineStringDelims: []string{`"""`, `'''`}, GroupBreak: PythonBreak},
 	"rust":        {Name: "rust", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"'}, GroupBreak: CFamilyBreak},
-	"go":          {Name: "go", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '`'}, GroupBreak: CFamilyBreak},
+	"go":          {Name: "go", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '`'}, MultilineStringDelims: []string{"`"}, GroupBreak: CFamilyBreak},
 	"c":           {Name: "c", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
 	"cpp":         {Name: "cpp", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
-	"csharp":      {Name: "csharp", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
-	"kotlin":      {Name: "kotlin", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
-	"swift":       {Name: "swift", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"'}, GroupBreak: CFamilyBreak},
+	"csharp":      {Name: "csharp", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, MultilineStringDelims: []string{`"""`}, GroupBreak: CFamilyBreak},
+	"kotlin":      {Name: "kotlin", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, MultilineStringDelims: []string{`"""`}, GroupBreak: CFamilyBreak},
+	"swift":       {Name: "swift", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"'}, MultilineStringDelims: []string{`"""`}, GroupBreak: CFamilyBreak},
 	"ruby":        {Name: "ruby", LineComment: "#", StringQuotes: []rune{'"', '\''}, GroupBreak: RubyBreak},
 	"php":         {Name: "php", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
-	"dart":        {Name: "dart", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, GroupBreak: CFamilyBreak},
+	"dart":        {Name: "dart", LineComment: "//", BlockCommentOpen: "/*", BlockCommentClose: "*/", StringQuotes: []rune{'"', '\''}, MultilineStringDelims: []string{`"""`, `'''`}, GroupBreak: CFamilyBreak},
 	"lua":         {Name: "lua", LineComment: "--", StringQuotes: []rune{'"', '\''}, GroupBreak: LuaBreak},
 	"makefile":    {Name: "makefile", LineComment: "#", StringQuotes: []rune{'"', '\''}, AssignRHSAtomic: true},
 	"shellscript": {Name: "shellscript", LineComment: "#", StringQuotes: []rune{'"', '\''}, AssignRHSAtomic: true, GroupBreak: ShellBreak},
