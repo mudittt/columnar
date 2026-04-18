@@ -1,0 +1,43 @@
+version: 2
+
+project_name: columnar
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./main.go
+    binary: columnar
+    ldflags:
+      - -s -w -X github.com/mudittt/columnar/cmd.version={{.Version}}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+brews:
+  - name: columnar
+    repository:
+      owner: mudittt
+      name: homebrew-columnar
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: "https://github.com/mudittt/columnar"
+    description: "A universal elastic tabstop code formatter"
+    license: "MIT"
+    test: |
+      system "#{bin}/columnar", "--version"
+    install: |
+      bin.install "columnar"

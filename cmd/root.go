@@ -7,11 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version = "dev"
+
 var rootCmd = &cobra.Command{
 	Use:     "columnar",
 	Short:   "A universal elastic tabstop code formatter",
 	Long:    "columnar brings gofmt-style column alignment to any language.",
-	Version: "0.1.0",
+	Version: version,
 }
 
 func Execute() {
