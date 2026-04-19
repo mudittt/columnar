@@ -80,10 +80,15 @@ func Format(src, language string, cfg *config.Config) (string, error) {
 		lines = lines[:len(lines)-1]
 	}
 
-	indentUnit := detectIndentUnit(lines)
+	tabWidth := cfg.IndentSize
+	if tabWidth <= 0 {
+		tabWidth = 4
+	}
+	indentUnit := detectIndentUnit(lines, tabWidth)
 	if indentUnit <= 0 {
 		indentUnit = 1
 	}
+	useTabs := detectTabIndent(lines)
 
 	var out strings.Builder
 	var group []row
@@ -99,10 +104,17 @@ func Format(src, language string, cfg *config.Config) (string, error) {
 		var buf bytes.Buffer
 		tw := tabwriter.NewWriter(&buf, 0, 1, padding, ' ', 0)
 		for _, r := range group {
+			// Feed spaces-only indent to tabwriter — a literal \t there would
+			// be treated as a cell delimiter. We'll convert the leading
+			// spaces back to tabs post-flush when the source uses tabs.
 			tw.Write([]byte(r.indent + strings.Join(r.cells, "\t") + "\n"))
 		}
 		tw.Flush()
-		out.WriteString(trimTrailingSpaces(buf.String()))
+		flushed := trimTrailingSpaces(buf.String())
+		if useTabs {
+			flushed = leadingSpacesToTabs(flushed, cfg.IndentSize)
+		}
+		out.WriteString(flushed)
 		group = group[:0]
 	}
 
@@ -110,10 +122,16 @@ func Format(src, language string, cfg *config.Config) (string, error) {
 	mlStringDelim := ""
 	inBlockComment := false
 	for _, line := range lines {
-		indent, rest := SplitIndent(line)
+		rawIndent, rest := SplitIndent(line)
+		// Expand leading-indent tabs to spaces so (a) mixed tab/space files
+		// normalize consistently and (b) literal tabs never reach tabwriter
+		// as the indent prefix (it would treat them as cell delimiters).
+		indent := expandIndentTabs(rawIndent, tabWidth)
 
-		// When AlignComments is disabled, emit block comment bodies verbatim.
-		if !cfg.AlignComments && langCfg.BlockCommentOpen != "" {
+		// Block comment bodies are always emitted verbatim — modifying comment
+		// text would violate the whitespace-only invariant. (AlignComments
+		// governs trailing `// comment` alignment, not block-comment bodies.)
+		if langCfg.BlockCommentOpen != "" {
 			if inBlockComment {
 				flushGroup()
 				out.WriteString(line + "\n")
@@ -190,7 +208,7 @@ func trimTrailingSpaces(s string) string {
 	return strings.Join(lines, "\n")
 }
 
-func detectIndentUnit(lines []string) int {
+func detectIndentUnit(lines []string, tabWidth int) int {
 	for _, line := range lines {
 		if strings.TrimSpace(line) == "" {
 			continue
@@ -202,13 +220,75 @@ func detectIndentUnit(lines []string) int {
 			if strings.HasPrefix(rest, "*") {
 				continue
 			}
-			if strings.Contains(indent, "\t") {
-				return 1
-			}
-			return len(indent)
+			return len(expandIndentTabs(indent, tabWidth))
 		}
 	}
 	return 1
+}
+
+// detectTabIndent reports whether the source predominantly uses tab
+// indentation. When true, we emit tabs in the output indent so we respect
+// the file's existing style instead of forcing spaces.
+func detectTabIndent(lines []string) bool {
+	tabCount, spaceCount := 0, 0
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		switch line[0] {
+		case '\t':
+			tabCount++
+		case ' ':
+			spaceCount++
+		}
+	}
+	return tabCount > spaceCount
+}
+
+// leadingSpacesToTabs replaces leading space runs with tabs at unit-sized
+// stops. Applied after tabwriter has flushed, so inter-cell padding spaces
+// are preserved while the indent prefix is converted back to tabs.
+func leadingSpacesToTabs(s string, unit int) string {
+	if unit <= 0 {
+		return s
+	}
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		lead := 0
+		for lead < len(line) && line[lead] == ' ' {
+			lead++
+		}
+		tabs := lead / unit
+		if tabs > 0 {
+			lines[i] = strings.Repeat("\t", tabs) + line[tabs*unit:]
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// expandIndentTabs replaces tabs in the leading indent with spaces, using
+// tabWidth as the stop. Done so mixed tab/space files normalize uniformly
+// and literal tabs never reach tabwriter as the indent prefix.
+func expandIndentTabs(indent string, tabWidth int) string {
+	if !strings.ContainsRune(indent, '\t') {
+		return indent
+	}
+	if tabWidth <= 0 {
+		tabWidth = 4
+	}
+	var b strings.Builder
+	col := 0
+	for _, c := range indent {
+		if c == '\t' {
+			n := tabWidth - (col % tabWidth)
+			b.WriteString(strings.Repeat(" ", n))
+			col += n
+			continue
+		}
+		b.WriteRune(c)
+		col++
+	}
+	return b.String()
 }
 
 func normalizeIndent(indent string, indentUnit, targetSize int) string {
